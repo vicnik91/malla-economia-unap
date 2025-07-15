@@ -1,13 +1,317 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Malla Curricular - Economía UNAP</title>
-  <!-- El contenido completo ya fue validado como funcional -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    #creditos-aprobados {
+      font-size: 1.2rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      font-weight: bold;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      text-align: center;
+    }
+    th {
+      background-color: #e0e0e0;
+    }
+    .curso.cadena {
+      background-color: #f8c0f0 !important;
+    }
+    .curso.no-cadena {
+      background-color: #ffc0cb !important;
+    }
+    .curso.extracurricular {
+      background-color: #dda0dd !important;
+    }
+    .aprobado {
+      text-decoration: line-through;
+    }
+    .jalado {
+      background-color: #d8bfd8 !important;
+    }
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+    }
+    .tooltiptext {
+      visibility: hidden;
+      width: 250px;
+      background-color: black;
+      color: #fff;
+      text-align: left;
+      padding: 5px;
+      border-radius: 6px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -125px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+    button {
+      margin: 2px;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .jalado-buttons {
+      display: flex;
+      gap: 2px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #descargarPDF, #restaurarEstado {
+      display: block;
+      margin: auto;
+      margin-bottom: 1rem;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-<!-- El cuerpo se construye con todo el contenido del código ya validado -->
+
+<h1>Malla Curricular Interactiva - Economía UNAP</h1>
+<div id="creditos-aprobados">Créditos aprobados: 0</div>
+<button id="descargarPDF">Descargar malla como PDF</button>
+<button id="restaurarEstado">Restaurar Estado</button>
+<table id="malla">
+  <thead>
+    <tr>
+      <th>Ciclo</th>
+      <th>Código</th>
+      <th>Asignatura</th>
+      <th>Créditos</th>
+      <th>Prerrequisitos</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  // Aquí continúa el JavaScript que renderiza la malla, gestiona los estados, calcula los créditos aprobados, etc.
+const cursos = [
+  { ciclo: 1, codigo: "023B10002", nombre: "MATEMÁTICA", creditos: 4.0, prereq: [], tipo: "cadena" },
+  { ciclo: 1, codigo: "023B10004", nombre: "DERECHO CONSTITUCIONAL Y DERECHOS HUMANOS", creditos: 3.0, prereq: [], tipo: "no-cadena" },
+  { ciclo: 1, codigo: "9080", nombre: "NATACIÓN", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+  { ciclo: 1, codigo: "023B10010", nombre: "FUNDAMENTOS DE ADMINISTRACION", creditos: 3.0, prereq: [], tipo: "cadena" },
+  { ciclo: 1, codigo: "023B10001", nombre: "LENGUAJE, REDACCIÓN Y ORATORIA", creditos: 4.0, prereq: [], tipo: "no-cadena" },
+  { ciclo: 1, codigo: "023B10008", nombre: "FILOSOFÍA", creditos: 3.0, prereq: [], tipo: "no-cadena" },
+  { ciclo: 1, codigo: "9110", nombre: "VOLEIBOL", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+  { ciclo: 1, codigo: "023B10009", nombre: "CREATIVIDAD E INNOVACIÓN EMPRESARIAL", creditos: 3.0, prereq: [], tipo: "cadena" },
+  { ciclo: 1, codigo: "9050", nombre: "GIMNASIA", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+  { ciclo: 1, codigo: "023B10003", nombre: "INGLÉS BÁSICO I", creditos: 2.0, prereq: [], tipo: "no-cadena" },
+  { ciclo: 1, codigo: "9040", nombre: "FÚTBOL", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+
+  { ciclo: 2, codigo: "9100", nombre: "TEATRO", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+  { ciclo: 2, codigo: "023B10014", nombre: "MATEMÁTICA II", creditos: 4.0, prereq: ["023B10002"], tipo: "cadena" },
+  { ciclo: 2, codigo: "9090", nombre: "ORATORIA", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+  { ciclo: 2, codigo: "023B10012", nombre: "FUNDAMENTOS DE CONTABILIDAD", creditos: 3.0, prereq: [], tipo: "cadena" },
+  { ciclo: 2, codigo: "023B10011", nombre: "FUNDAMENTOS DE ECONOMÍA", creditos: 3.0, prereq: [], tipo: "cadena" },
+  { ciclo: 2, codigo: "9095", nombre: "PRIMEROS AUXILIOS", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+  { ciclo: 2, codigo: "9010", nombre: "BÁSQUETBOL", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+  { ciclo: 2, codigo: "9065", nombre: "FOLKLORE", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+  { ciclo: 2, codigo: "023B10007", nombre: "INGLÉS BÁSICO II", creditos: 2.0, prereq: ["023B10003"], tipo: "no-cadena" },
+  { ciclo: 2, codigo: "9005", nombre: "DEFENSA PERSONAL", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+  { ciclo: 2, codigo: "023B10005", nombre: "REALIDAD NACIONAL Y DESARROLLO REGIONAL AMAZÓNICO", creditos: 4.0, prereq: [], tipo: "cadena" },
+  { ciclo: 2, codigo: "9000", nombre: "ATLETISMO", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+  { ciclo: 2, codigo: "9030", nombre: "DANZAS", creditos: 1.0, prereq: [], tipo: "extracurricular" },
+  { ciclo: 2, codigo: "023B10006", nombre: "METODOLOGÍA DE LA INVESTIGACIÓN CIENTÍFICA", creditos: 3.0, prereq: [], tipo: "cadena" },
+
+  { ciclo: 3, codigo: "023B10015", nombre: "MICROECONOMIA", creditos: 4.0, prereq: ["023B10011"], tipo: "cadena" },
+  { ciclo: 3, codigo: "023B10016", nombre: "MATEMÁTICA III", creditos: 4.0, prereq: ["023B10014"], tipo: "cadena" },
+  { ciclo: 3, codigo: "023B10018", nombre: "ESTADÍSTICA I", creditos: 4.0, prereq: ["023B10014"], tipo: "cadena" },
+  { ciclo: 3, codigo: "023B10017", nombre: "COSTO Y PRESUPUESTO EMPRESARIAL", creditos: 3.0, prereq: ["023B10012"], tipo: "cadena" },
+  { ciclo: 3, codigo: "023B10019", nombre: "DOCTRINAS ECONÓMICAS", creditos: 3.0, prereq: ["023B10011"], tipo: "cadena" },
+  { ciclo: 3, codigo: "023B10020", nombre: "HISTORIA ECONÓMICA DEL PERÚ", creditos: 3.0, prereq: [], tipo: "cadena" },
+
+  { ciclo: 4, codigo: "023B10026", nombre: "SOCIOLOGÍA", creditos: 2.0, prereq: ["023B10008"], tipo: "cadena" },
+  { ciclo: 4, codigo: "023B10025", nombre: "CONTABILIDAD GERENCIAL", creditos: 3.0, prereq: ["023B10017"], tipo: "cadena" },
+  { ciclo: 4, codigo: "023B10024", nombre: "ESTADÍSTICA II", creditos: 4.0, prereq: ["023B10018"], tipo: "cadena" },
+  { ciclo: 4, codigo: "023B10023", nombre: "MATEMÁTICA FINANCIERA", creditos: 4.0, prereq: ["023B10014"], tipo: "cadena" },
+  { ciclo: 4, codigo: "023B10021", nombre: "ANÁLISIS MICROECONÓMICO", creditos: 4.0, prereq: ["023B10015"], tipo: "cadena" },
+  { ciclo: 4, codigo: "023B10022", nombre: "MATEMÁTICA IV", creditos: 4.0, prereq: ["023B10016"], tipo: "cadena" },
+
+  { ciclo: 5, codigo: "023B10032", nombre: "ANÁLISIS Y GESTIÓN DE RIESGO", creditos: 3.0, prereq: ["023B10022"], tipo: "cadena" },
+  { ciclo: 5, codigo: "023B10028", nombre: "TEORÍA DE LA REGULACIÓN ECONÓMICA", creditos: 4.0, prereq: ["023B10021"], tipo: "cadena" },
+  { ciclo: 5, codigo: "023B10031", nombre: "PROGRAMAS INFORMÁTICOS PARA LA ECONOMÍA", creditos: 4.0, prereq: ["023B10024"], tipo: "cadena" },
+  { ciclo: 5, codigo: "023B10029", nombre: "ECONOMÍA DE RECURSOS NATURALES Y MEDIO AMBIENTE", creditos: 4.0, prereq: ["023B10021"], tipo: "cadena" },
+  { ciclo: 5, codigo: "023B10030", nombre: "RESPONSABILIDAD SOCIAL", creditos: 2.0, prereq: [], tipo: "no-cadena" },
+  { ciclo: 5, codigo: "023B10027", nombre: "MACROECONOMÍA", creditos: 4.0, prereq: ["023B10011"], tipo: "cadena" },
+
+  { ciclo: 6, codigo: "023B10033", nombre: "ANÁLISIS MACROECONÓMICO", creditos: 4.0, prereq: ["023B10027"], tipo: "cadena" },
+  { ciclo: 6, codigo: "023B10038", nombre: "ECONOMÍA DEL CAPITAL HUMANO Y DEL EMPLEO", creditos: 3.0, prereq: ["023B10027"], tipo: "cadena" },
+  { ciclo: 6, codigo: "023B10035", nombre: "DEONTOLOGÍA PROFESIONAL", creditos: 3.0, prereq: [], tipo: "no-cadena" },
+  { ciclo: 6, codigo: "023B10034", nombre: "OPTIMIZACIÓN ECONÓMICA", creditos: 4.0, prereq: ["023B10022"], tipo: "cadena" },
+  { ciclo: 6, codigo: "023B10037", nombre: "INVESTIGACIÓN DE MERCADOS", creditos: 4.0, prereq: ["023B10031"], tipo: "cadena" },
+  { ciclo: 6, codigo: "023B10036", nombre: "ECONOMETRÍA I", creditos: 4.0, prereq: ["023B10024"], tipo: "cadena" },
+
+  { ciclo: 7, codigo: "023B10039", nombre: "ECONOMÍA FINANCIERA", creditos: 4.0, prereq: ["023B10025"], tipo: "cadena" },
+  { ciclo: 7, codigo: "023B10044", nombre: "FINANZAS CORPORATIVAS", creditos: 3.0, prereq: ["023B10032"], tipo: "cadena" },
+  { ciclo: 7, codigo: "023B10040", nombre: "TEORÍA MONETARIA", creditos: 4.0, prereq: ["023B10033"], tipo: "cadena" },
+  { ciclo: 7, codigo: "023B10041", nombre: "ECONOMETRÍA II", creditos: 4.0, prereq: ["023B10036"], tipo: "cadena" },
+  { ciclo: 7, codigo: "023B10045", nombre: "SEMINARIO DE CUENTAS NACIONALES", creditos: 3.0, prereq: ["023B10027"], tipo: "cadena" },
+  { ciclo: 7, codigo: "023B10043", nombre: "FORMULACIÓN Y EVALUACIÓN DE PROYECTOS I", creditos: 4.0, prereq: ["023B10037"], tipo: "cadena" },
+  { ciclo: 7, codigo: "023B10042", nombre: "DERECHO ECONÓMICO", creditos: 3.0, prereq: ["023B10004"], tipo: "no-cadena" },
+
+  { ciclo: 8, codigo: "023B10046", nombre: "PLANIFICACIÓN ESTRATÉGICA", creditos: 4.0, prereq: ["023B10033"], tipo: "cadena" },
+  { ciclo: 8, codigo: "023B10050", nombre: "MACROECONOMÍA DINÁMICA", creditos: 4.0, prereq: ["023B10034"], tipo: "cadena" },
+  { ciclo: 8, codigo: "023B10049", nombre: "FINANZAS PÚBLICAS", creditos: 3.0, prereq: ["023B10040"], tipo: "cadena" },
+  { ciclo: 8, codigo: "023B10047", nombre: "TEORÍA DEL CRECIMIENTO Y DESARROLLO", creditos: 4.0, prereq: ["023B10033"], tipo: "cadena" },
+  { ciclo: 8, codigo: "023B10052", nombre: "SEMINARIO DE BANCA Y DE SEGUROS", creditos: 3.0, prereq: ["023B10032"], tipo: "cadena" },
+  { ciclo: 8, codigo: "023B10048", nombre: "FORMULACIÓN Y EVALUACIÓN DE PROYECTOS II", creditos: 4.0, prereq: ["023B10043"], tipo: "cadena" },
+  { ciclo: 8, codigo: "023B10051", nombre: "TÓPICOS DE ECONOMETRÍA", creditos: 3.0, prereq: ["023B10041"], tipo: "cadena" },
+
+  { ciclo: 9, codigo: "023B10058", nombre: "SEMINARIO DE ECONOMÍA TRIBUTARIA", creditos: 3.0, prereq: ["023B10039"], tipo: "cadena" },
+  { ciclo: 9, codigo: "023B10053", nombre: "COMERCIO INTERNACIONAL", creditos: 4.0, prereq: ["023B10033"], tipo: "cadena" },
+  { ciclo: 9, codigo: "023B10055", nombre: "SEMINARIO DE TENDENCIAS Y PERSPECTIVAS ECONÓMICAS", creditos: 2.0, prereq: ["023B10047"], tipo: "cadena" },
+  { ciclo: 9, codigo: "023B10057", nombre: "SEMINARIO DE DEMOGRAFÍA Y REALIDAD SOCIOECONÓMICAS", creditos: 3.0, prereq: ["023B10027"], tipo: "cadena" },
+  { ciclo: 9, codigo: "023B10056", nombre: "SEMINARIO DE TESIS", creditos: 4.0, prereq: ["023B10006"], tipo: "cadena" },
+  { ciclo: 9, codigo: "023B10054", nombre: "POLÍTICA ECONÓMICA", creditos: 4.0, prereq: ["023B10046"], tipo: "cadena" },
+
+  { ciclo: 10, codigo: "023B10061", nombre: "TRABAJO DE INVESTIGACIÓN", creditos: 5.0, prereq: ["023B10056"], tipo: "cadena" },
+  { ciclo: 10, codigo: "023B10062", nombre: "ECONOMÍA REGIONAL", creditos: 3.0, prereq: ["023B10053"], tipo: "cadena" },
+  { ciclo: 10, codigo: "023B10060", nombre: "PRÁCTICA PRE PROFESIONAL", creditos: 5.0, prereq: [], tipo: "cadena" },
+  { ciclo: 10, codigo: "023B10059", nombre: "ECONOMÍA Y GESTIÓN PÚBLICA", creditos: 4.0, prereq: ["023B10054"], tipo: "cadena" }
+];
+
+const tbody = document.querySelector("#malla tbody");
+let creditosAprobados = 0;
+
+function guardarEstado() {
+  const estado = Array.from(document.querySelectorAll(".curso")).map(row => {
+    return {
+      codigo: row.dataset.codigo,
+      estado: row.dataset.estado,
+      intentos: row.dataset.intentos || 0
+    };
+  });
+  localStorage.setItem("estadoMalla", JSON.stringify(estado));
+}
+
+function cargarEstado() {
+  const guardado = localStorage.getItem("estadoMalla");
+  if (!guardado) return;
+  const estado = JSON.parse(guardado);
+  estado.forEach(({ codigo, estado, intentos }) => {
+    const fila = document.querySelector(`.curso[data-codigo='${codigo}']`);
+    if (fila) {
+      fila.dataset.estado = estado;
+      fila.dataset.intentos = intentos;
+      actualizarFila(fila);
+    }
+  });
+}
+
+function actualizarCreditos() {
+  creditosAprobados = 0;
+  document.querySelectorAll(".curso").forEach(row => {
+    if (row.dataset.estado === "aprobado") {
+      creditosAprobados += parseFloat(row.dataset.creditos);
+    }
+  });
+  document.querySelector("#creditos-aprobados").textContent = `Créditos aprobados: ${creditosAprobados}`;
+}
+
+function actualizarFila(row) {
+  row.classList.remove("aprobado", "jalado");
+  const estado = row.dataset.estado;
+  if (estado === "aprobado") {
+    row.classList.add("aprobado");
+  } else if (estado === "jalado") {
+    row.classList.add("jalado");
+    const intento = parseInt(row.dataset.intentos) || 1;
+    row.querySelector(".estado").textContent = `Jalado (${intento}° vez)`;
+    return;
+  }
+  row.querySelector(".estado").textContent = estado.charAt(0).toUpperCase() + estado.slice(1);
+  actualizarCreditos();
+  guardarEstado();
+}
+
+function crearFila(curso) {
+  const tr = document.createElement("tr");
+  tr.classList.add("curso", curso.tipo);
+  tr.dataset.codigo = curso.codigo;
+  tr.dataset.creditos = curso.creditos;
+  tr.dataset.estado = "pendiente";
+  tr.innerHTML = `
+    <td>${curso.ciclo}</td>
+    <td>${curso.codigo}</td>
+    <td>${curso.nombre}</td>
+    <td>${curso.creditos}</td>
+    <td>
+      ${curso.prereq.length > 0 ? curso.prereq.map(c => `<span class='tooltip'>${c}<span class='tooltiptext'>${buscarNombreCurso(c)}</span></span>`).join(", ") : "-"}
+    </td>
+    <td class="estado">Pendiente</td>
+  `;
+  tr.addEventListener("click", () => {
+    const estado = tr.dataset.estado;
+    if (estado === "pendiente") {
+      tr.dataset.estado = "aprobado";
+    } else if (estado === "aprobado") {
+      tr.dataset.estado = "jalado";
+      tr.dataset.intentos = 1;
+    } else if (estado === "jalado") {
+      tr.dataset.intentos = parseInt(tr.dataset.intentos) + 1;
+    }
+    actualizarFila(tr);
+  });
+  tbody.appendChild(tr);
+}
+
+function buscarNombreCurso(codigo) {
+  const c = cursos.find(c => c.codigo === codigo);
+  return c ? c.nombre : codigo;
+}
+
+function renderizarMalla() {
+  cursos.forEach(crearFila);
+  cargarEstado();
+  actualizarCreditos();
+}
+
+document.getElementById("restaurarEstado").addEventListener("click", () => {
+  localStorage.removeItem("estadoMalla");
+  location.reload();
+});
+
+document.getElementById("descargarPDF").addEventListener("click", () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.text("Malla Curricular - Economía UNAP", 10, 10);
+  doc.text(`Créditos aprobados: ${creditosAprobados}`, 10, 20);
+  doc.autoTable({ html: '#malla', startY: 30 });
+  doc.save("malla_curricular.pdf");
+});
+
+renderizarMalla();
 </body>
 </html>
